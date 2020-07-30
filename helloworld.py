@@ -111,7 +111,7 @@ async def FMHandler(app: Mirai, friend: Friend, message: FriendMessage):
 
 @app.receiver(GroupMessage)
 async def GMHandler(app: Mirai, group: Group, member: Member, message: GroupMessage):
-    if group.id in [238395348, 682559012, 478981022, 171118753]:
+    if group.id in allowed_groups:
         if message.toString() == '小六，涩图':
             img_path = get_img_path()
             temp_path = get_temp_path(img_path)
