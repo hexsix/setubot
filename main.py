@@ -24,21 +24,27 @@ app = Mirai(f"mirai://{mirai_api_http_locate}?authKey={authKey}&qq={qq}")
 @app.receiver(GroupMessage)
 async def GMHandler(app: Mirai, group: Group, member: Member, message: GroupMessage):
     if group.id in allowed_groups:
-        if message.toString() == '小六，涩图':
-            await app.sendGroupMessage(group, [
+        if message.toString() == '小六，help':
+            await app.sendGroupMessage(group.id, [
+                Plain(text="小六，涩图：setu库里随机一张\n"),
+                Plain(text="小六，新涩图：setu库里最新三张\n"),
+                Plain(text="小六，{img/link}：向setu库里添加一张\n"),
+            ])
+        elif message.toString() == '小六，涩图':
+            await app.sendGroupMessage(group.id, [
                 Image.fromFileSystem(random_setu()),
             ])
         elif message.toString() == '小六，新涩图':
             for temp_path in newest_setu():
-                await app.sendGroupMessage(group, [
+                await app.sendGroupMessage(group.id, [
                     Image.fromFileSystem(temp_path),
                 ])
         elif message.toString()[:3] == '小六，' and message.toString()[3:7] == 'http':
-            await app.sendGroupMessage(group, [
+            await app.sendGroupMessage(group.id, [
                 Plain(text=save_link_img(message.toString()[3:])),
             ])
         elif message.toString()[:9] == '小六，[Image':
-            await app.sendGroupMessage(group, [
+            await app.sendGroupMessage(group.id, [
                 Plain(text=save_img(message.messageChain.getFirstComponent(Image))),
             ])
 
