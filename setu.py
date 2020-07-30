@@ -14,7 +14,7 @@ from typing import List, Tuple
 
 import cv2
 import numpy as np
-
+import requests
 
 setu_dir = r'./imgs/hso'
 
@@ -97,6 +97,32 @@ def salt(img: np.ndarray, n: int = 6) -> np.ndarray:
             img[j, i, 1] = randint(0, 255)
             img[j, i, 2] = randint(0, 255)
     return img
+
+
+def save_link_img(link: str) -> str:
+    suffix = link.split('.')[-1]
+    if suffix in ['png', 'PNG', 'jpg', 'jpeg', 'JPG', 'JPEG', 'jfif', 'JFIF']:
+        save_path = './imgs/hso/share/' + str(datetime.datetime.now()) + '.' + suffix
+        try:
+            img = requests.get(link, proxies={"http": "localhost:7890", "https": "localhost:7890"}).content
+            with open(save_path, 'wb') as f:
+                f.write(img)
+            return '保存成功'
+        except Exception as e:
+            return str(e)
+    else:
+        return '小六现在没法处理尾缀不是JPG/PNG的链接。'
+
+
+def save_img(img) -> str:
+    save_path = './imgs/hso/share/' + str(datetime.datetime.now()) + '.jpeg'
+    try:
+        img = requests.get(img.url).content
+        with open(save_path, 'wb') as f:
+            f.write(img)
+        return '保存成功'
+    except Exception as e:
+        return str(e)
 
 
 if __name__ == '__main__':

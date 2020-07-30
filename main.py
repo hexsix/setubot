@@ -10,7 +10,7 @@ import json
 
 from mirai import Mirai, Plain, MessageChain, Friend, Image, GroupMessage, Group, Member, FriendMessage
 
-from setu import random_setu, newest_setu
+from setu import random_setu, newest_setu, save_link_img, save_img
 
 config = json.load(open('config.json'))
 qq = config['qq']  # 字段 qq 的值
@@ -33,6 +33,14 @@ async def GMHandler(app: Mirai, group: Group, member: Member, message: GroupMess
                 await app.sendGroupMessage(group, [
                     Image.fromFileSystem(temp_path),
                 ])
+        elif message.toString()[:3] == '小六，' and message.toString()[3:7] == 'http':
+            await app.sendGroupMessage(group, [
+                Plain(text=save_link_img(message.toString()[3:])),
+            ])
+        elif message.toString()[:9] == '小六，[Image':
+            await app.sendGroupMessage(group, [
+                Plain(text=save_img(message.messageChain.getFirstComponent(Image))),
+            ])
 
 
 if __name__ == "__main__":
