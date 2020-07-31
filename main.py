@@ -17,6 +17,7 @@ qq = config['qq']  # 字段 qq 的值
 authKey = config['authKey']  # 字段 authKey 的值
 mirai_api_http_locate = config['port']  # httpapi所在主机的地址端口,如果 setting.yml 文件里字段 "enableWebsocket" 的值为 "true" 则需要将 "/" 换成 "/ws", 否则将接收不到消息.
 allowed_groups = config['allowedGroups']
+call = config['call']
 
 app = Mirai(f"mirai://{mirai_api_http_locate}?authKey={authKey}&qq={qq}")
 
@@ -26,13 +27,13 @@ async def GMHandler(app: Mirai, group: Group, member: Member, message: GroupMess
     if group.id in allowed_groups:
         message_list = message.toString().split('，')
         appellation = message_list[0]
-        if appellation == '小六':
+        if appellation in call:
             operation = message_list[1]
             if operation == 'help':
                 await app.sendGroupMessage(group.id, [
-                    Plain(text="小六，涩图[，n]：setu库里随机n张，默认1张，最多5张\n"),
-                    Plain(text="小六，新涩图[，n]：setu库里最新n张，默认3张，最多5张\n"),
-                    Plain(text="小六，{img}：向setu库里添加n张"),
+                    Plain(text=str(call) + "，涩图[，n]：setu库里随机n张，默认1张，最多5张\n"),
+                    Plain(text=str(call) + "，新涩图[，n]：setu库里最新n张，默认3张，最多5张\n"),
+                    Plain(text=str(call) + "，{img}：向setu库里添加n张"),
                 ])
             elif operation == '涩图':
                 try:
