@@ -24,29 +24,71 @@ app = Mirai(f"mirai://{mirai_api_http_locate}?authKey={authKey}&qq={qq}")
 @app.receiver(GroupMessage)
 async def GMHandler(app: Mirai, group: Group, member: Member, message: GroupMessage):
     if group.id in allowed_groups:
-        if message.toString() == '小六，help':
-            await app.sendGroupMessage(group.id, [
-                Plain(text="小六，涩图：setu库里随机一张\n"),
-                Plain(text="小六，新涩图：setu库里最新三张\n"),
-                Plain(text="小六，{img/link}：向setu库里添加一张\n"),
-            ])
-        elif message.toString() == '小六，涩图':
-            await app.sendGroupMessage(group.id, [
-                Image.fromFileSystem(random_setu()),
-            ])
-        elif message.toString() == '小六，新涩图':
-            for temp_path in newest_setu():
+        message_list = message.toString().split('，')
+        appellation = message_list[0]
+        if appellation == '小六':
+            operation = message_list[1]
+            if operation == 'help':
                 await app.sendGroupMessage(group.id, [
-                    Image.fromFileSystem(temp_path),
+                    Plain(text="小六，涩图[，n]：setu库里随机n张，默认1张，最多5张\n"),
+                    Plain(text="小六，新涩图[，n]：setu库里最新n张，默认3张，最多5张\n"),
+                    Plain(text="小六，{img}：向setu库里添加n张"),
                 ])
-        elif message.toString()[:3] == '小六，' and message.toString()[3:7] == 'http':
-            await app.sendGroupMessage(group.id, [
-                Plain(text=save_link_img(message.toString()[3:])),
-            ])
-        elif message.toString()[:9] == '小六，[Image':
-            await app.sendGroupMessage(group.id, [
-                Plain(text=save_img(message.messageChain.getFirstComponent(Image))),
-            ])
+            elif operation == '涩图':
+                try:
+                    param = min(5, int(message_list[2]))
+                    for _ in range(param):
+                        await app.sendGroupMessage(group.id, [
+                            Image.fromFileSystem(random_setu()),
+                        ])
+                except IndexError:
+                    await app.sendGroupMessage(group.id, [
+                        Image.fromFileSystem(random_setu()),
+                    ])
+                except ValueError:
+                    await app.sendGroupMessage(group.id, [
+                        Plain(text='zzZ'),
+                    ])
+            elif operation == '新涩图':
+                try:
+                    param = min(5, int(message_list[2]))
+                    for temp_path in newest_setu(param):
+                        await app.sendGroupMessage(group.id, [
+                            Image.fromFileSystem(temp_path),
+                        ])
+                except IndexError:
+                    for temp_path in newest_setu():
+                        await app.sendGroupMessage(group.id, [
+                            Image.fromFileSystem(temp_path),
+                        ])
+                except ValueError:
+                    await app.sendGroupMessage(group.id, [
+                        Plain(text='zzZ'),
+                    ])
+            elif operation[:4] == 'http':
+                await app.sendGroupMessage(group.id, [
+                    Plain(text=save_link_img(message.toString()[3:])),
+                ])
+            elif operation[:6] == '[Image':
+                img_s_ = message.messageChain.getAllofComponent(Image)
+                try:
+                    flag = True
+                    if type(img_s_) is list:
+                        for img in img_s_:
+                            flag &= save_img(img)
+                    else:
+                        flag &= save_img(img_s_)
+                    await app.sendGroupMessage(group.id, [
+                        Plain(text='保存成功'),
+                    ])
+                except:
+                    await app.sendGroupMessage(group.id, [
+                        Plain(text='zzZ'),
+                    ])
+            else:
+                await app.sendGroupMessage(group.id, [
+                    Plain(text='zzZ'),
+                ])
 
 
 if __name__ == "__main__":

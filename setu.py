@@ -114,15 +114,15 @@ def save_link_img(link: str) -> str:
         return '小六现在没法处理尾缀不是JPG/PNG的链接。'
 
 
-def save_img(img) -> str:
+def save_img(img) -> bool:
     save_path = './imgs/hso/share/' + str(datetime.datetime.now()) + '.jpeg'
     try:
         img = requests.get(img.url).content
         with open(save_path, 'wb') as f:
             f.write(img)
-        return '保存成功'
+        return True
     except Exception as e:
-        return str(e)
+        return False
 
 
 if __name__ == '__main__':
