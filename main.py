@@ -28,67 +28,72 @@ async def GMHandler(app: Mirai, group: Group, member: Member, message: GroupMess
         message_list = message.toString().split('，')
         appellation = message_list[0]
         if appellation in call:
-            operation = message_list[1]
-            if operation == 'help':
-                await app.sendGroupMessage(group.id, [
-                    Plain(text=str(call) + "，涩图[，n]：setu库里随机n张，默认1张，最多5张\n"),
-                    Plain(text=str(call) + "，新涩图[，n]：setu库里最新n张，默认3张，最多5张\n"),
-                    Plain(text=str(call) + "，{img}：向setu库里添加n张"),
-                ])
-            elif operation == '涩图':
-                try:
-                    param = min(5, int(message_list[2]))
-                    for _ in range(param):
+            try:
+                operation = message_list[1]
+                if operation == 'help':
+                    await app.sendGroupMessage(group.id, [
+                        Plain(text=str(call) + "，涩图[，n]：setu库里随机n张，默认1张，最多5张\n"),
+                        Plain(text=str(call) + "，新涩图[，n]：setu库里最新n张，默认3张，最多5张\n"),
+                        Plain(text=str(call) + "，{img}：向setu库里添加n张"),
+                    ])
+                elif operation == '涩图':
+                    try:
+                        param = min(5, int(message_list[2]))
+                        for _ in range(param):
+                            await app.sendGroupMessage(group.id, [
+                                Image.fromFileSystem(random_setu()),
+                            ])
+                    except IndexError:
                         await app.sendGroupMessage(group.id, [
                             Image.fromFileSystem(random_setu()),
                         ])
-                except IndexError:
-                    await app.sendGroupMessage(group.id, [
-                        Image.fromFileSystem(random_setu()),
-                    ])
-                except ValueError:
-                    await app.sendGroupMessage(group.id, [
-                        Plain(text='zzZ'),
-                    ])
-            elif operation == '新涩图':
-                try:
-                    param = min(5, int(message_list[2]))
-                    for temp_path in newest_setu(param):
+                    except ValueError:
                         await app.sendGroupMessage(group.id, [
-                            Image.fromFileSystem(temp_path),
+                            Plain(text='zzZ'),
                         ])
-                except IndexError:
-                    for temp_path in newest_setu():
+                elif operation == '新涩图':
+                    try:
+                        param = min(5, int(message_list[2]))
+                        for temp_path in newest_setu(param):
+                            await app.sendGroupMessage(group.id, [
+                                Image.fromFileSystem(temp_path),
+                            ])
+                    except IndexError:
+                        for temp_path in newest_setu():
+                            await app.sendGroupMessage(group.id, [
+                                Image.fromFileSystem(temp_path),
+                            ])
+                    except ValueError:
                         await app.sendGroupMessage(group.id, [
-                            Image.fromFileSystem(temp_path),
+                            Plain(text='zzZ'),
                         ])
-                except ValueError:
+                elif operation[:4] == 'http':
+                    await app.sendGroupMessage(group.id, [
+                        Plain(text=save_link_img(message.toString()[3:])),
+                    ])
+                elif operation[:6] == '[Image':
+                    img_s_ = message.messageChain.getAllofComponent(Image)
+                    try:
+                        flag = True
+                        if type(img_s_) is list:
+                            for img in img_s_:
+                                flag &= save_img(img)
+                        else:
+                            flag &= save_img(img_s_)
+                        await app.sendGroupMessage(group.id, [
+                            Plain(text='保存成功'),
+                        ])
+                    except:
+                        await app.sendGroupMessage(group.id, [
+                            Plain(text='zzZ'),
+                        ])
+                else:
                     await app.sendGroupMessage(group.id, [
                         Plain(text='zzZ'),
                     ])
-            elif operation[:4] == 'http':
+            except IndexError:
                 await app.sendGroupMessage(group.id, [
-                    Plain(text=save_link_img(message.toString()[3:])),
-                ])
-            elif operation[:6] == '[Image':
-                img_s_ = message.messageChain.getAllofComponent(Image)
-                try:
-                    flag = True
-                    if type(img_s_) is list:
-                        for img in img_s_:
-                            flag &= save_img(img)
-                    else:
-                        flag &= save_img(img_s_)
-                    await app.sendGroupMessage(group.id, [
-                        Plain(text='保存成功'),
-                    ])
-                except:
-                    await app.sendGroupMessage(group.id, [
-                        Plain(text='zzZ'),
-                    ])
-            else:
-                await app.sendGroupMessage(group.id, [
-                    Plain(text='zzZ'),
+                    Plain(text="zzZ"),
                 ])
 
 
