@@ -50,9 +50,25 @@ def get_temp_path(img_path):
     return ret
 
 
-def random_setu() -> str:
+def random_setu(tag: str = None) -> str:
     """
     从 setu 文件夹中随机抽取一张 setu，撒盐，保存到 temp.jpg/temp.png
+    :return: temp.jpg/temp.png
+    """
+    setu_list = get_sorted_setu_paths()
+    tagged_setu_list = [item for item in setu_list if tag in item[0]]
+    idx = randint(0, len(tagged_setu_list) - 1)
+    setu_path = tagged_setu_list[idx][0]
+    setu = cv2.imread(setu_path)
+    salty_setu = salt(setu)
+    temp_path = get_temp_path(setu_path)
+    cv2.imwrite(temp_path, salty_setu)
+    return temp_path
+
+
+def random_tag_setu(tag: str, n: int) -> str:
+    """
+    从 setu 文件夹中按照 tag 随机抽取 n 张 setu，撒盐，保存到 temp.jpg/temp.png
     :return: temp.jpg/temp.png
     """
     setu_list = get_sorted_setu_paths()

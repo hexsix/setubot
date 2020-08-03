@@ -11,6 +11,7 @@ import json
 from mirai import Mirai, Plain, MessageChain, Friend, Image, GroupMessage, Group, Member, FriendMessage
 
 from setu import random_setu, newest_setu, save_link_img, save_img
+from img import Setu
 
 config = json.load(open('config.json'))
 qq = config['qq']  # 字段 qq 的值
@@ -20,6 +21,7 @@ allowed_groups = config['allowedGroups']
 call = config['call']
 
 app = Mirai(f"mirai://{mirai_api_http_locate}?authKey={authKey}&qq={qq}")
+se = Setu()
 
 
 @app.receiver(GroupMessage)
@@ -37,35 +39,40 @@ async def GMHandler(app: Mirai, group: Group, member: Member, message: GroupMess
                         Plain(text=str(call) + "，{img}：向setu库里添加n张"),
                     ])
                 elif operation == '涩图':
+                    n, tags = 0, []
                     try:
-                        param = min(5, int(message_list[2]))
-                        for _ in range(param):
-                            await app.sendGroupMessage(group.id, [
-                                Image.fromFileSystem(random_setu()),
-                            ])
+                        n = min(5, int(message_list[2]))
                     except IndexError:
-                        await app.sendGroupMessage(group.id, [
-                            Image.fromFileSystem(random_setu()),
-                        ])
+                        n = 1
                     except ValueError:
                         await app.sendGroupMessage(group.id, [
                             Plain(text='zzZ'),
+                        ])
+                    try:
+                        tags = message_list[3].split(' ')
+                    except IndexError:
+                        tags = []
+                    for temp_img_path in se.random_imgs(n, tags):
+                        await app.sendGroupMessage(group.id, [
+                            Image.fromFileSystem(temp_img_path),
                         ])
                 elif operation == '新涩图':
+                    n, tags = 0, []
                     try:
-                        param = min(5, int(message_list[2]))
-                        for temp_path in newest_setu(param):
-                            await app.sendGroupMessage(group.id, [
-                                Image.fromFileSystem(temp_path),
-                            ])
+                        n = min(5, int(message_list[2]))
                     except IndexError:
-                        for temp_path in newest_setu():
-                            await app.sendGroupMessage(group.id, [
-                                Image.fromFileSystem(temp_path),
-                            ])
+                        n = 3
                     except ValueError:
                         await app.sendGroupMessage(group.id, [
                             Plain(text='zzZ'),
+                        ])
+                    try:
+                        tags = message_list[3].split(' ')
+                    except IndexError:
+                        tags = []
+                    for temp_img_path in se.newest_imgs(n, tags):
+                        await app.sendGroupMessage(group.id, [
+                            Image.fromFileSystem(temp_img_path),
                         ])
                 elif operation[:4] == 'http':
                     await app.sendGroupMessage(group.id, [
