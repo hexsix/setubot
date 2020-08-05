@@ -23,7 +23,7 @@ class Img(object):
 
     def get_temp_path(self, img_path: str, idx: int) -> str:
         suffix = img_path.split('.')[-1]
-        return os.path.join(self.root_dir, 'temp_{}.{}'.format(idx, 'jpg' if suffix == 'jfif' else suffix))
+        return os.path.join(self.root_dir, '.temp_{}.{}'.format(idx, 'jpg' if suffix == 'jfif' else suffix))
 
     @staticmethod
     def get_mtime(file_path: str) -> datetime.datetime:
@@ -36,9 +36,11 @@ class Img(object):
         """
         img_paths = []
         for dirpath, dirnames, filenames in os.walk(self.root_dir):
+            filenames = [f for f in filenames if not f[0] == '.']       # ignore hidden files
+            dirnames[:] = [d for d in dirnames if not d[0] == '.']      # and hidden dirs
             for filename in filenames:
-                if filename[0] == '.':
-                    continue  # ignore hidden files
+                if filename == 'README.md':
+                    continue
                 file_path = os.path.join(dirpath, filename)
                 img_paths.append(file_path)
         return img_paths
