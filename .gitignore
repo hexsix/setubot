@@ -1,4 +1,5 @@
 .idea
+imgs/.temp*
 imgs/temp.*
 imgs/hso
 config.json
