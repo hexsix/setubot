@@ -116,13 +116,17 @@ class Img(object):
             temp_paths.append(self.save_to_temp(img_path, i))
         return temp_paths
 
-    def save_img(self, img):
+    def save_img(self, img, memberid: int) -> bool:
         """
         保存图片到本地
         :param img:
+        :param memberid:
         :return:
         """
-        save_path = './imgs/hso/share/' + str(datetime.datetime.now()) + '.jpeg'
+        # print(img.url, memberid)
+        if not os.path.exists(os.path.join('./imgs/hso/share', str(memberid))):
+            os.mkdir(os.path.join('./imgs/hso/share', str(memberid)))
+        save_path = os.path.join('./imgs/hso/share', str(memberid), f'qq {memberid} {datetime.datetime.now()}.jpeg')
         try:
             img = requests.get(img.url).content
             with open(save_path, 'wb') as f:

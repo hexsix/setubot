@@ -72,9 +72,9 @@ async def GMHandler(app: Mirai, group: Group, member: Member, message: GroupMess
                     flag = True
                     if type(img_s_) is list:
                         for img in img_s_:
-                            flag &= se.save_img(img)
+                            flag &= se.save_img(img, member.id)
                     else:
-                        flag &= se.save_img(img_s_)
+                        flag &= se.save_img(img_s_, member.id)
                     await app.sendGroupMessage(group.id, [
                         Plain(text='successfully saved'),
                     ])
