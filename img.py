@@ -10,7 +10,7 @@ Date: 2020/08/03
 import datetime
 import os
 import random
-from typing import List, Tuple
+from typing import List
 
 import cv2
 import numpy as np
@@ -29,13 +29,14 @@ class Img(object):
     def get_mtime(file_path: str) -> datetime.datetime:
         return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
 
-    def get_img_paths(self) -> List[str]:
+    @staticmethod
+    def get_img_paths(root_dir) -> List[str]:
         """
         获得根目录下所有文件路径
         :return: List[文件路径]
         """
         img_paths = []
-        for dirpath, dirnames, filenames in os.walk(self.root_dir):
+        for dirpath, dirnames, filenames in os.walk(root_dir):
             filenames = [f for f in filenames if not f[0] == '.']       # ignore hidden files
             dirnames[:] = [d for d in dirnames if not d[0] == '.']      # and hidden dirs
             for filename in filenames:
@@ -58,7 +59,8 @@ class Img(object):
         paths_with_mtime.sort(key=lambda item: item[1], reverse=True)
         return [item[0] for item in paths_with_mtime]
 
-    def filter_paths_by_tags(self, paths: List[str], tags: List[str]) -> List[str]:
+    @staticmethod
+    def filter_paths_by_tags(paths: List[str], tags: List[str]) -> List[str]:
         """
         按照 tags 过滤图片路径
         :param paths: List[图片路径]
@@ -88,35 +90,38 @@ class Img(object):
         cv2.imwrite(temp_path, img)
         return temp_path
 
-    def random_imgs(self, n: int, tags: List[str]) -> List[str]:
+    def random_imgs(self, n: int, tags: List[str], root_dir: str = r'./imgs') -> List[str]:
         """
         随机图片，返回 temp 图的保存路径
         :param n: 图片数
         :param tags: 标签
+        :param root_dir:
         :return: List[图片路径]
         """
         temp_paths = []
-        img_paths = self.filter_paths_by_tags(self.get_img_paths(), tags)
+        img_paths = self.filter_paths_by_tags(self.get_img_paths(root_dir), tags)
         indexes = random.sample(range(len(img_paths)), min(len(img_paths), n))
         random_img_paths = [img_paths[i] for i in indexes]
         for i, random_img_path in enumerate(random_img_paths):
             temp_paths.append(self.save_to_temp(random_img_path, i))
         return temp_paths
 
-    def newest_imgs(self, n: int, tags: List[str]) -> List[str]:
+    def newest_imgs(self, n: int, tags: List[str], root_dir: str = r'./imgs') -> List[str]:
         """
-        懒了(TODO)
+        懒了
         :param n:
         :param tags:
+        :param root_dir:
         :return:
         """
         temp_paths = []
-        img_paths = self.sort_paths_by_mtime(self.filter_paths_by_tags(self.get_img_paths(), tags))[:n]
+        img_paths = self.sort_paths_by_mtime(self.filter_paths_by_tags(self.get_img_paths(root_dir), tags))[:n]
         for i, img_path in enumerate(img_paths):
             temp_paths.append(self.save_to_temp(img_path, i))
         return temp_paths
 
-    def save_img(self, img, memberid: int) -> bool:
+    @staticmethod
+    def save_img(img, memberid: int) -> bool:
         """
         保存图片到本地
         :param img:
@@ -132,7 +137,7 @@ class Img(object):
             with open(save_path, 'wb') as f:
                 f.write(img)
             return True
-        except Exception as e:
+        except Exception:
             return False
 
 
