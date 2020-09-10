@@ -7,76 +7,47 @@ Author: hexsix
 Date: 2020/08/03
 -------------------------------------- """
 
-import datetime
 import os
+import json
 import random
-from typing import List
+import datetime
+from typing import List, Dict, Set
 
 import cv2
 import numpy as np
-import requests
 
 
 class Img(object):
+    @staticmethod
+    def init_images_dict():
+        images = {}
+        for dirpath, dirnames, filenames in os.walk('./Eagle/illustration.library/images'):
+            for filename in filenames:
+                if filename == 'metadata.json':
+                    j = json.load(open(os.path.join(dirpath, filename)))
+                    if 'game screenshot' in j['tags'] or 'meme' in j['tags'] or 'interesting' in j['tags']:
+                        continue
+                    images[j['id']] = j
+        return images
+
+    @staticmethod
+    def init_tags_dict(images) -> Dict[str, Set[str]]:
+        tags = {}
+        for (k, v) in images.items():
+            if v['tags']:
+                for tag in v['tags']:
+                    try:
+                        tags[tag].add(k)
+                    except:
+                        tags[tag] = {k}
+        return tags
+
     def __init__(self, root_dir: str = r'./imgs'):
         self.root_dir = root_dir
 
     def get_temp_path(self, img_path: str, idx: int) -> str:
         suffix = img_path.split('.')[-1]
         return os.path.join(self.root_dir, '.temp_{}.{}'.format(idx, 'jpg' if suffix == 'jfif' else suffix))
-
-    @staticmethod
-    def get_mtime(file_path: str) -> datetime.datetime:
-        return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
-
-    @staticmethod
-    def get_img_paths(root_dir) -> List[str]:
-        """
-        获得根目录下所有文件路径
-        :return: List[文件路径]
-        """
-        img_paths = []
-        for dirpath, dirnames, filenames in os.walk(root_dir):
-            filenames = [f for f in filenames if not f[0] == '.']       # ignore hidden files
-            dirnames[:] = [d for d in dirnames if not d[0] == '.']      # and hidden dirs
-            for filename in filenames:
-                if filename == 'README.md':
-                    continue
-                file_path = os.path.join(dirpath, filename)
-                img_paths.append(file_path)
-        return img_paths
-
-    def sort_paths_by_mtime(self, paths: List[str]) -> List[str]:
-        """
-        按照修改时间排序
-        :param paths: List[文件路径]
-        :return: 排好序的 List[文件路径]
-        """
-        paths_with_mtime = []
-        for path in paths:
-            mtime = self.get_mtime(path)
-            paths_with_mtime.append((path, mtime))
-        paths_with_mtime.sort(key=lambda item: item[1], reverse=True)
-        return [item[0] for item in paths_with_mtime]
-
-    @staticmethod
-    def filter_paths_by_tags(paths: List[str], tags: List[str]) -> List[str]:
-        """
-        按照 tags 过滤图片路径
-        :param paths: List[图片路径]
-        :param tags: List[tag]
-        :return: 过滤后的 List[图片路径]
-        """
-        if not tags:
-            return paths
-
-        def tags_all_in_path(_path):
-            for tag in tags:
-                if tag not in _path:
-                    return False
-            return True
-
-        return [path for path in paths if tags_all_in_path(path)]
 
     def save_to_temp(self, src_path: str, idx: int) -> str:
         """
@@ -90,58 +61,109 @@ class Img(object):
         cv2.imwrite(temp_path, img)
         return temp_path
 
-    def random_imgs(self, n: int, tags: List[str], root_dir: str = r'./imgs') -> List[str]:
+    def random_imgs(self, n: int, tags: List[str]) -> List[str]:
         """
         随机图片，返回 temp 图的保存路径
         :param n: 图片数
         :param tags: 标签
-        :param root_dir:
-        :return: List[图片路径]
+        :return:
         """
-        temp_paths = []
-        img_paths = self.filter_paths_by_tags(self.get_img_paths(root_dir), tags)
-        indexes = random.sample(range(len(img_paths)), min(len(img_paths), n))
-        random_img_paths = [img_paths[i] for i in indexes]
-        for i, random_img_path in enumerate(random_img_paths):
-            temp_paths.append(self.save_to_temp(random_img_path, i))
-        return temp_paths
+        images_dict = self.init_images_dict()
+        tags_dict = self.init_tags_dict(images_dict)
+        imgid_set = images_dict.keys()
+        for tag in tags:
+            if tag in tags_dict:
+                imgid_set = imgid_set & tags_dict[tag]
+            else:
+                return []
 
-    def newest_imgs(self, n: int, tags: List[str], root_dir: str = r'./imgs') -> List[str]:
+        indexes = random.sample(range(len(imgid_set)), min(len(imgid_set), n))
+        imgid_list = list(imgid_set)
+        random_imgid_list = [imgid_list[i] for i in indexes]
+
+        for i, imgid in enumerate(random_imgid_list):
+            img_path = os.path.join('./Eagle/illustration.library/images', f'{imgid}.info',
+                                    f'{images_dict[imgid]["name"]}.{images_dict[imgid]["ext"]}')
+            temp_img_path = self.save_to_temp(img_path, i)
+
+            indexes = random.sample(range(len(images_dict[imgid]["tags"])), min(len(images_dict[imgid]["tags"]), 5))
+            random_tags_list = [images_dict[imgid]["tags"][i] for i in indexes]
+
+            yield temp_img_path, images_dict[imgid]["annotation"][:10], random_tags_list, images_dict[imgid]["url"]
+
+    def new_imgs(self, n, sended_imgs):
         """
-        懒了
+        每日新图
+        :param n: int
+        :return:
+        """
+        now = int(datetime.datetime.now().timestamp())
+        images_dict = self.init_images_dict()
+        imgid_set = set()
+        for k, v in images_dict.items():
+            if now - 5 * 60 * 60 < int(str(v['btime'])[:-3]) and v['id'] not in sended_imgs and 'pickup' in v['tags']:
+                imgid_set.add(k)
+
+        imgid_set = imgid_set - sended_imgs
+        imgid_list = list(imgid_set)
+        indexes = random.sample(range(len(imgid_list)), min(len(imgid_list), n))
+        random_imgid_list = [imgid_list[i] for i in indexes]
+
+        for i, imgid in enumerate(random_imgid_list):
+            sended_imgs.add(imgid)
+            img_path = os.path.join('./Eagle/illustration.library/images', f'{imgid}.info',
+                                    f'{images_dict[imgid]["name"]}.{images_dict[imgid]["ext"]}')
+            temp_img_path = self.save_to_temp(img_path, i)
+
+            indexes = random.sample(range(len(images_dict[imgid]["tags"])), min(len(images_dict[imgid]["tags"]), 5))
+            random_tags_list = [images_dict[imgid]["tags"][i] for i in indexes]
+
+            yield temp_img_path, images_dict[imgid]["annotation"], random_tags_list, images_dict[imgid]["url"]
+
+    def yande_popular(self, n, sended_imgs):
+        """
+        yande popular
         :param n:
-        :param tags:
-        :param root_dir:
+        :param sended_imgs:
         :return:
         """
-        temp_paths = []
-        img_paths = self.sort_paths_by_mtime(self.filter_paths_by_tags(self.get_img_paths(root_dir), tags))[:n]
-        for i, img_path in enumerate(img_paths):
-            temp_paths.append(self.save_to_temp(img_path, i))
-        return temp_paths
+        now = int(datetime.datetime.now().timestamp())
+        images_dict = self.init_images_dict()
+        imgid_set = set()
+        for k, v in images_dict.items():
+            if now - 24 * 60 * 60 < int(str(v['btime'])[:-3]) and v['id'] not in sended_imgs and 'yande' in v['tags']:
+                imgid_set.add(k)
 
-    @staticmethod
-    def save_img(img, memberid: int) -> bool:
-        """
-        保存图片到本地
-        :param img:
-        :param memberid:
-        :return:
-        """
-        # print(img.url, memberid)
-        if not os.path.exists(os.path.join('./imgs/hso/share', str(memberid))):
-            os.mkdir(os.path.join('./imgs/hso/share', str(memberid)))
-        save_path = os.path.join('./imgs/hso/share', str(memberid), f'qq {memberid} {datetime.datetime.now()}.jpeg')
-        try:
-            img = requests.get(img.url).content
-            with open(save_path, 'wb') as f:
-                f.write(img)
-            return True
-        except Exception:
-            return False
+        imgid_set = imgid_set - sended_imgs
+        imgid_list = list(imgid_set)
+        indexes = random.sample(range(len(imgid_list)), min(len(imgid_list), n))
+        random_imgid_list = [imgid_list[i] for i in indexes]
+
+        for i, imgid in enumerate(random_imgid_list):
+            sended_imgs.add(imgid)
+            img_path = os.path.join('./Eagle/illustration.library/images', f'{imgid}.info',
+                                    f'{images_dict[imgid]["name"]}.{images_dict[imgid]["ext"]}')
+            temp_img_path = self.save_to_temp(img_path, i)
+
+            indexes = random.sample(range(len(images_dict[imgid]["tags"])), min(len(images_dict[imgid]["tags"]), 5))
+            random_tags_list = [images_dict[imgid]["tags"][i] for i in indexes]
+
+            yield temp_img_path, images_dict[imgid]["annotation"], random_tags_list, images_dict[imgid]["url"]
 
 
 class Setu(Img):
+    @staticmethod
+    def init_images_dict():
+        images = {}
+        for dirpath, dirnames, filenames in os.walk('./Eagle/illustration.library/images'):
+            for filename in filenames:
+                if filename == 'metadata.json':
+                    j = json.load(open(os.path.join(dirpath, filename)))
+                    if 'ignore' in j['tags']:
+                        continue
+                    images[j['id']] = j
+        return images
+
     @staticmethod
     def salt(img: np.ndarray, n: int = 6) -> np.ndarray:
         """
@@ -176,5 +198,4 @@ class Setu(Img):
 
 
 if __name__ == '__main__':
-    print(Img().newest_imgs(5, []))
     pass
