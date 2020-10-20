@@ -7,6 +7,12 @@ cache.json
 temp.py
 nohup.out
 Eagle
+*.pkl
+yandedl/secret/*
+yandedl/yande_popular/*
+temp_imgs
+sended_popular.txt
+sended_random.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
