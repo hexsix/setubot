@@ -16,12 +16,12 @@ from typing import List
 
 import cv2
 
-from utils import save_list, read_list, salt
+from utils import save_list, read_list, salt, resize
 
 
 class ImgEagle(object):
     def __init__(self):
-        self.root_dir = r'/home/ebi/Projects/miraiok/python195bot/'
+        self.root_dir = r'/home/ebi/Projects/Pictures'
         self.img_dir = os.path.join(self.root_dir, "Eagle/illustration.library/images")
         self.images = {}
         self.tags = {}
@@ -52,6 +52,7 @@ class ImgEagle(object):
 
     def save_to_temp(self, src_path: str, idx: int) -> str:
         img = cv2.imread(src_path)
+        img = resize(img, os.path.getsize(src_path))
         salt_img = salt(img)
         temp_path = self.get_temp_path(src_path, idx)
         cv2.imwrite(temp_path, salt_img)

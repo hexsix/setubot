@@ -12,13 +12,14 @@ import json
 from typing import Iterator, Tuple
 
 import cv2
+import numpy as np
 
-from utils import save_list, read_list, salt
+from utils import save_list, read_list, salt, resize
 
 
 class ImgYande(object):
     def __init__(self):
-        self.root_dir = r'/home/ebi/Projects/miraiok/python195bot/'
+        self.root_dir = r'/home/ebi/Projects/Pictures/'
         self.img_dir = os.path.join(self.root_dir, 'yandedl/yande_popular')
 
     def get_temp_path(self, img_path: str, idx: int) -> str:
@@ -27,6 +28,8 @@ class ImgYande(object):
 
     def save_to_temp(self, src_path: str, idx: int) -> str:
         img = cv2.imread(src_path)
+        assert type(img) == np.ndarray
+        img = resize(img, os.path.getsize(src_path))
         salt_img = salt(img)
         temp_path = self.get_temp_path(src_path, idx)
         cv2.imwrite(temp_path, salt_img)
@@ -34,18 +37,25 @@ class ImgYande(object):
 
     def new_imgs(self) -> Iterator[Tuple[str]]:
         sended_popular = read_list(os.path.join(self.root_dir, 'sended_popular.txt'))
+        error_list = read_list(os.path.join(self.root_dir, 'error.txt'))
         filenames = os.listdir(os.path.join(self.root_dir, 'yandedl/yande_popular'))
         while len(sended_popular) > 5 * len(filenames):
             sended_popular.popleft()
         for i, filename in enumerate(filenames):
-            if filename.endswith('json') or not filename.startswith('yande') or filename in sended_popular:
+            if filename.endswith('json') or not filename.startswith('yande') or filename in sended_popular or filename in error_list:
                 continue
-            sended_popular.append(filename)
             filepath = os.path.join(self.root_dir, 'yandedl/yande_popular', filename)
             metadata = json.load(open(f'{filepath}.json', 'r'))
-            temp_img_path = self.save_to_temp(filepath, i)
+            try:
+                temp_img_path = self.save_to_temp(filepath, i)
+            except Exception as e:
+                error_list.append(filename)
+                save_list(error_list, os.path.join(self.root_dir, 'error.txt'))
+                print(filename)
+                continue
             yield temp_img_path, metadata['source'] if metadata['source'] != '' else metadata['website']
-        save_list(sended_popular, os.path.join(self.root_dir, 'sended_popular.txt'))
+            sended_popular.append(filename)
+            save_list(sended_popular, os.path.join(self.root_dir, 'sended_popular.txt'))
 
 
 if __name__ == '__main__':

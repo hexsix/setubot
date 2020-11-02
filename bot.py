@@ -92,8 +92,8 @@ async def zhengdiansetu():
     while True:
         await asyncio.sleep(1)
         if datetime.now().second == 0:
+            img_yande = ImgYande()
             try:
-                img_yande = ImgYande()
                 for temp_path, source in img_yande.new_imgs():
                     with enter_context(app=app, event_i=zhengdiansetu):
                         for i in range(0, 3):
