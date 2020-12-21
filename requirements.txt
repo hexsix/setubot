@@ -1,0 +1,6 @@
+feedparser
+numpy
+opencv_python
+requests
+graia-application-mirai
+graia-broadcast

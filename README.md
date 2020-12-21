@@ -18,10 +18,14 @@ Mirai 是一个在全平台下运行，提供 QQ Android 和 TIM PC 协议支持
 
 **Mirai**: https://github.com/mamoe/mirai
 
-**MiraiOK**: https://github.com/LXY1226/MiraiOK
-
 **mirai-api-http**: https://github.com/project-mirai/mirai-api-http
 
-**python-mirai**: https://github.com/NatriumLab/python-mirai
+**Graia**: https://github.com/GraiaProject/Application
 
 ## 自用
+
+从 yande.re 的 popular 爬 score > 40 的图，自动发在群里（带盐），为了加快图片发送还加了 resize
+
+想用也可以，改下RSS的解析和配置文件就能用了吧，要用 shell 脚本的话也要改一下路径
+
+requirements 见 requirements.txt 
